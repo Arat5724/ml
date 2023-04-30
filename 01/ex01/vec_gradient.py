@@ -2,19 +2,29 @@ import numpy as np
 from numpy import ndarray
 
 
-def add_intercept(x: ndarray) -> ndarray:
-    try:
-        if x.ndim == 1:
-            x = x.reshape((*x.shape, 1))
-        m, n = x.shape
-        if m * n == 0:
-            return None
-        return np.hstack((np.ones((m, 1)), x))
-    except Exception as e:
-        print(e)
+def typechecker(fun):
+    def reshape_(*arg):
+        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
+
+    def wrapper(x, y, theta):
+        try:
+            if (isinstance(x, ndarray) and isinstance(y, ndarray) and
+                    isinstance(theta, ndarray)):
+                x, y, theta = reshape_(x, y, theta)
+                if (x.size and theta.size and x.ndim == 2 and theta.ndim == 2 and
+                        x.shape[1] == 1 and theta.shape == (2, 1) and x.shape == y.shape):
+                    return fun(x, y, theta)
+        except Exception as e:
+            print(e)
+    return wrapper
 
 
-def gradient(x: ndarray, y: ndarray, theta: ndarray) -> ndarray:
+def add_intercept(x: ndarray) -> ndarray | None:
+    return np.hstack((np.ones((x.shape[0], 1)), x))
+
+
+@typechecker
+def gradient(x: ndarray, y: ndarray, theta: ndarray) -> ndarray | None:
     """
     Computes a gradient vector from three non-empty numpy.array, without any for loop.
         The three arrays must have compatible shapes.
@@ -29,12 +39,19 @@ def gradient(x: ndarray, y: ndarray, theta: ndarray) -> ndarray:
     Raises:
         This function should not raise any Exception.
     """
+    x1 = add_intercept(x)
+    y_hat = np.dot(x1, theta)
+    return np.dot(x1.T, y_hat - y) / y.shape[0]
 
-    x = add_intercept(x)
-    if y.ndim == 1:
-        y = y.reshape((*y.shape, 1))
-    if theta.ndim == 1:
-        theta = theta.reshape((*theta.shape, 1))
-    m, _ = y.shape
-    y_hat = np.dot(x, theta)
-    return np.dot(x.T, y_hat - y).reshape((2, 1)) / m
+
+if __name__ == "__main__":
+    x = np.array([12.4956442, 21.5007972, 31.5527382,
+                 48.9145838, 57.5088733]).reshape((-1, 1))
+    y = np.array([37.4013816, 36.1473236, 45.7655287,
+                 46.6793434, 59.5585554]).reshape((-1, 1))
+
+    theta1 = np.array([2, 0.7]).reshape((-1, 1))
+    print(gradient(x, y, theta1))
+
+    theta2 = np.array([1, -0.4]).reshape((-1, 1))
+    print(gradient(x, y, theta2))

@@ -2,31 +2,40 @@ import numpy as np
 from numpy import ndarray
 
 
-def add_intercept(x: ndarray) -> ndarray:
-    try:
-        if x.ndim == 1:
-            x = x.reshape((*x.shape, 1))
-        m, n = x.shape
-        if m * n == 0:
-            return None
-        return np.hstack((np.ones((m, 1)), x))
-    except Exception as e:
-        print(e)
+def typechecker(fun):
+    def reshape_(*arg):
+        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
+
+    def wrapper(x, y, theta, alpha, max_iter):
+        try:
+            if (isinstance(x, ndarray) and isinstance(y, ndarray) and isinstance(theta, ndarray) and
+                    isinstance(alpha, float) and isinstance(max_iter, int)):
+                x, y, theta = reshape_(x, y, theta)
+                if (x.size and theta.size and x.ndim == 2 and theta.ndim == 2 and
+                        x.shape[1] == 1 and theta.shape == (2, 1) and x.shape == y.shape):
+                    return fun(x, y, theta, alpha, max_iter)
+        except Exception as e:
+            print(e)
+    return wrapper
 
 
-def gradient(x: ndarray, y: ndarray, theta: ndarray) -> ndarray:
-
-    x = add_intercept(x)
-    if y.ndim == 1:
-        y = y.reshape((*y.shape, 1))
-    if theta.ndim == 1:
-        theta = theta.reshape((*theta.shape, 1))
-    m, _ = y.shape
-    y_hat = np.dot(x, theta)
-    return np.dot(x.T, y_hat - y).reshape((2, 1)) / m
+def add_intercept(x: ndarray) -> ndarray | None:
+    return np.hstack((np.ones((x.shape[0], 1)), x))
 
 
-def fit_(x: ndarray, y: ndarray, theta: ndarray, alpha: float, max_iter: int) -> ndarray:
+def predict_(x: ndarray, theta: ndarray) -> ndarray | None:
+    x1 = add_intercept(x)
+    return np.dot(x1, theta)
+
+
+def gradient(x: ndarray, y: ndarray, theta: ndarray) -> ndarray | None:
+    x1 = add_intercept(x)
+    y_hat = np.dot(x1, theta)
+    return np.dot(x1.T, y_hat - y) / y.shape[0]
+
+
+@typechecker
+def fit_(x: ndarray, y: ndarray, theta: ndarray, alpha: float, max_iter: int) -> ndarray | None:
     """
     Description:
         Fits the model to the training dataset contained in x and y.
@@ -48,3 +57,15 @@ def fit_(x: ndarray, y: ndarray, theta: ndarray, alpha: float, max_iter: int) ->
             break
         theta = new_theta
     return theta
+
+
+if __name__ == "__main__":
+    x = np.array([[12.4956442], [21.5007972], [
+                 31.5527382], [48.9145838], [57.5088733]])
+    y = np.array([[37.4013816], [36.1473236], [
+                 45.7655287], [46.6793434], [59.5585554]])
+    theta = np.array([1, 1]).reshape((-1, 1))
+
+    theta1 = fit_(x, y, theta, alpha=5e-8, max_iter=1500000)
+    print(theta1)
+    print(predict_(x, theta1))
