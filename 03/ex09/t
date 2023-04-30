@@ -1,0 +1,15 @@
+import numpy as np
+import pandas as pd
+from confusion_matrix import confusion_matrix_
+# from sklearn.metrics import confusion_matrix
+
+y_hat = np.array([['norminet'], ['dog'], ['norminet'],
+                 ['norminet'], ['dog'], ['bird']])
+y = np.array([['dog'], ['dog'], ['norminet'], [
+             'norminet'], ['dog'], ['norminet']])
+
+confusion_matrix_(y, y_hat, df_option=True)
+confusion_matrix_(y, y_hat)
+confusion_matrix_(y, y_hat, labels=['dog', 'norminet'])
+confusion_matrix_(y, y_hat, labels=['bird', 'dog'], df_option=True)
+confusion_matrix_(y, y_hat, labels=['bird', 'dog'])
