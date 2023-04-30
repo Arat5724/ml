@@ -2,33 +2,32 @@ import numpy as np
 from numpy import ndarray
 
 
-def add_intercept(x: ndarray) -> ndarray:
-    try:
-        if x.ndim == 1:
-            x = x.reshape((*x.shape, 1))
-        m, n = x.shape
-        if m * n == 0:
-            return None
-        return np.hstack((np.ones((m, 1)), x))
-    except Exception as e:
-        print(e)
+def typechecker(fun):
+    def reshape_(*arg):
+        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
+
+    def wrapper(y, y_hat):
+        try:
+            if isinstance(y, ndarray) and isinstance(y_hat, ndarray):
+                y, y_hat = reshape_(y, y_hat)
+                if y.size and y.ndim == 2 and y.shape == y_hat.shape:
+                    return fun(y, y_hat)
+        except Exception as e:
+            print(e)
+    return wrapper
 
 
-def predict_(x: ndarray, theta: ndarray) -> ndarray:
-    try:
-        x = add_intercept(x)
-        if x is None:
-            return None
-        if theta.ndim == 1:
-            theta = theta.reshape((*theta.shape, 1))
-        t, k = theta.shape
-        if t == 2 and k == 1:
-            return x.dot(theta)
-    except Exception as e:
-        print(e)
+def add_intercept(x: ndarray) -> ndarray | None:
+    return np.hstack((np.ones((x.shape[0], 1)), x))
 
 
-def loss_elem_(y: ndarray, y_hat: ndarray) -> ndarray:
+def predict_(x: ndarray, theta: ndarray) -> ndarray | None:
+    x1 = add_intercept(x)
+    return np.dot(x1, theta)
+
+
+@typechecker
+def loss_elem_(y: ndarray, y_hat: ndarray) -> ndarray | None:
     """
     Description:
         Calculates all the elements (y_pred - y)^2 of the loss function.
@@ -46,7 +45,8 @@ def loss_elem_(y: ndarray, y_hat: ndarray) -> ndarray:
     return res * res
 
 
-def loss_(y: ndarray, y_hat: ndarray) -> float:
+@typechecker
+def loss_(y: ndarray, y_hat: ndarray) -> float | None:
     """
     Description:
         Calculates the value of loss function.
@@ -60,7 +60,22 @@ def loss_(y: ndarray, y_hat: ndarray) -> float:
     Raises:
         This function should not raise any Exception.
     """
-    if y.shape == y_hat.shape:
-        m, _ = y.shape
-        loss = loss_elem_(y, y_hat)
-        return loss.sum() / 2 / m
+    m, _ = y.shape
+    loss = loss_elem_(y, y_hat)
+    return loss.sum() / 2 / m
+
+
+if __name__ == "__main__":
+    x1 = np.array([[0.], [1.], [2.], [3.], [4.]])
+    theta1 = np.array([[2.], [4.]])
+    y_hat1 = predict_(x1, theta1)
+    y1 = np.array([[2.], [7.], [12.], [17.], [22.]])
+    print(loss_elem_(y1, y_hat1))
+    print(loss_(y1, y_hat1))
+
+    x2 = np.array([0, 15, -9, 7, 12, 3, -21]).reshape(-1, 1)
+    theta2 = np.array([[0.], [1.]]).reshape(-1, 1)
+    y_hat2 = predict_(x2, theta2)
+    y2 = np.array([2, 14, -13, 5, 12, 4, -19]).reshape(-1, 1)
+    print(loss_(y2, y_hat2))
+    print(loss_(y2, y2))

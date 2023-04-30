@@ -2,19 +2,25 @@ import numpy as np
 from numpy import ndarray
 
 
-def add_intercept(x: ndarray) -> ndarray:
-    try:
-        if x.ndim == 1:
-            x = x.reshape((*x.shape, 1))
-        m, n = x.shape
-        if m * n == 0:
-            return None
-        return np.hstack((np.ones((m, 1)), x))
-    except Exception as e:
-        print(e)
+def typechecker(fun):
+    def reshape_(*arg):
+        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
+
+    def wrapper(x, theta):
+        try:
+            if isinstance(x, ndarray) and isinstance(theta, ndarray):
+                x, theta = reshape_(x, theta)
+                if (x.size and theta.size and
+                    x.ndim == 2 and theta.ndim == 2 and
+                        x.shape[1] == 1 and theta.shape == (2, 1)):
+                    return fun(x, theta)
+        except Exception as e:
+            print(e)
+    return wrapper
 
 
-def predict_(x: ndarray, theta: ndarray) -> ndarray:
+@typechecker
+def predict_(x: ndarray, theta: ndarray) -> ndarray | None:
     """
     Computes the vector of prediction y_hat from two non-empty numpy.array.
     Args:
@@ -28,14 +34,5 @@ def predict_(x: ndarray, theta: ndarray) -> ndarray:
     Raises:
         This function should not raise any Exceptions.
     """
-    try:
-        x = add_intercept(x)
-        if x is None:
-            return None
-        if theta.ndim == 1:
-            theta = theta.reshape((*theta.shape, 1))
-        t, k = theta.shape
-        if t == 2 and k == 1:
-            return x.dot(theta)
-    except Exception as e:
-        print(e)
+    x1 = np.hstack((np.ones((x.shape[0], 1)), x))
+    return np.dot(x1, theta)

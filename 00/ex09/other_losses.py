@@ -3,18 +3,23 @@ from numpy import ndarray
 from math import sqrt
 
 
-def set_dimension(fun):
-    def wrapper(y: ndarray, y_hat: ndarray) -> float:
-        if y.ndim == 1:
-            y = y.reshape((*y.shape, 1))
-        if y_hat.ndim == 1:
-            y_hat = y_hat.reshape((*y_hat.shape, 1))
-        return fun(y, y_hat)
+def typechecker(fun):
+    def reshape_(*arg):
+        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
+
+    def wrapper(y, y_hat):
+        try:
+            if isinstance(y, ndarray) and isinstance(y_hat, ndarray):
+                y, y_hat = reshape_(y, y_hat)
+                if y.size and y.ndim == 2 and y.shape == y_hat.shape:
+                    return fun(y, y_hat)
+        except Exception as e:
+            print(e)
     return wrapper
 
 
-@set_dimension
-def mse_(y: ndarray, y_hat: ndarray) -> float:
+@typechecker
+def mse_(y: ndarray, y_hat: ndarray) -> float | None:
     """
     Description:
         Calculate the MSE between the predicted output and the real output.
@@ -27,13 +32,12 @@ def mse_(y: ndarray, y_hat: ndarray) -> float:
     Raises:
         This function should not raise any Exceptions.
     """
-    (m, _) = y.shape
     res = (y_hat - y).reshape(-1)
-    return np.dot(res, res) / m
+    return np.dot(res, res) / y.shape[0]
 
 
-@set_dimension
-def rmse_(y: ndarray, y_hat: ndarray) -> float:
+@typechecker
+def rmse_(y: ndarray, y_hat: ndarray) -> float | None:
     """
     Description:
         Calculate the RMSE between the predicted output and the real output.
@@ -49,8 +53,8 @@ def rmse_(y: ndarray, y_hat: ndarray) -> float:
     return sqrt(mse_(y, y_hat))
 
 
-@set_dimension
-def mae_(y: ndarray, y_hat: ndarray) -> float:
+@typechecker
+def mae_(y: ndarray, y_hat: ndarray) -> float | None:
     """
     Description:
         Calculate the MAE between the predicted output and the real output.
@@ -63,12 +67,11 @@ def mae_(y: ndarray, y_hat: ndarray) -> float:
     Raises:
         This function should not raise any Exceptions.
     """
-    (m, _) = y.shape
-    return (y_hat - y).reshape(-1).absolute().sum() / m
+    return np.absolute(y_hat - y).sum() / y.shape[0]
 
 
-@set_dimension
-def r2score_(y: ndarray, y_hat: ndarray) -> float:
+@typechecker
+def r2score_(y: ndarray, y_hat: ndarray) -> float | None:
     """
     Description:
         Calculate the R2score between the predicted output and the output.
@@ -82,6 +85,15 @@ def r2score_(y: ndarray, y_hat: ndarray) -> float:
         This function should not raise any Exceptions.
     """
     tmp1 = (y_hat - y).reshape(-1)
-    tmp2 = (y - np.full_like(y, y.mean())).reshape(-1)
-    print(tmp2)
+    tmp2 = (y - y.mean()).reshape(-1)
     return 1 - np.dot(tmp1, tmp1) / np.dot(tmp2, tmp2)
+
+
+if __name__ == "__main__":
+    x = np.array([0, 15, -9, 7, 12, 3, -21])
+    y = np.array([2, 14, -13, 5, 12, 4, -19])
+
+    print(mse_(x, y))
+    print(rmse_(x, y))
+    print(mae_(x, y))
+    print(r2score_(x, y))

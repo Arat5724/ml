@@ -3,32 +3,33 @@ from numpy import ndarray
 import matplotlib.pyplot as plt
 
 
-def add_intercept(x: ndarray) -> ndarray:
-    try:
-        if x.ndim == 1:
-            x = x.reshape((*x.shape, 1))
-        m, n = x.shape
-        if m * n == 0:
-            return None
-        return np.hstack((np.ones((m, 1)), x))
-    except Exception as e:
-        print(e)
+def typechecker(fun):
+    def reshape_(*arg):
+        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
+
+    def wrapper(x, y, theta):
+        try:
+            if (isinstance(x, ndarray) and isinstance(y, ndarray) and
+                    isinstance(theta, ndarray)):
+                x, y, theta = reshape_(x, y, theta)
+                if (x.size and theta.size and x.ndim == 2 and theta.ndim == 2 and
+                        x.shape[1] == 1 and theta.shape == (2, 1) and x.shape == y.shape):
+                    return fun(x, y, theta)
+        except Exception as e:
+            print(e)
+    return wrapper
 
 
-def predict_(x: ndarray, theta: ndarray) -> ndarray:
-    try:
-        x = add_intercept(x)
-        if x is None:
-            return None
-        if theta.ndim == 1:
-            theta = theta.reshape((*theta.shape, 1))
-        t, k = theta.shape
-        if t == 2 and k == 1:
-            return x.dot(theta)
-    except Exception as e:
-        print(e)
+def add_intercept(x: ndarray) -> ndarray | None:
+    return np.hstack((np.ones((x.shape[0], 1)), x))
 
 
+def predict_(x: ndarray, theta: ndarray) -> ndarray | None:
+    x1 = add_intercept(x)
+    return np.dot(x1, theta)
+
+
+@typechecker
 def plot(x: ndarray, y: ndarray, theta: ndarray) -> None:
     """
     Plot the data and prediction line from three non-empty numpy.array.
@@ -41,17 +42,15 @@ def plot(x: ndarray, y: ndarray, theta: ndarray) -> None:
     Raises:
         This function should not raise any Exceptions.
     """
-    if x.ndim == 1:
-        x = x.reshape((*x.shape, 1))
-    if y.ndim == 1:
-        y = y.reshape((*y.shape, 1))
-    if x.shape != y.shape:
-        return None
-    if theta.ndim == 1:
-        theta = theta.reshape((*theta.shape, 1))
-    m, _ = x.shape
-    t, k = theta.shape
-    fig, ax = plt.subplots(num="plot")
+    ax = plt.figure(num="plot").add_subplot()
     ax.scatter(x, y)
-    ax.plot(x, predict_(x, theta), c="orange")
+    y_hat = predict_(x, theta)
+    ax.plot(x, y_hat, c="orange")
     plt.show()
+
+
+if __name__ == "__main__":
+    x = np.arange(1, 6)
+    y = np.array([3.74013816, 3.61473236, 4.57655287, 4.66793434, 5.95585554])
+    theta1 = np.array([[4.5], [-0.2]])
+    plot(x, y, theta1)
