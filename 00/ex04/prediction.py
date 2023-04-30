@@ -19,6 +19,10 @@ def typechecker(fun):
     return wrapper
 
 
+def add_intercept(x: ndarray) -> ndarray | None:
+    return np.hstack((np.ones((x.shape[0], 1)), x))
+
+
 @typechecker
 def predict_(x: ndarray, theta: ndarray) -> ndarray | None:
     """
@@ -34,5 +38,5 @@ def predict_(x: ndarray, theta: ndarray) -> ndarray | None:
     Raises:
         This function should not raise any Exceptions.
     """
-    x1 = np.hstack((np.ones((x.shape[0], 1)), x))
+    x1 = add_intercept(x)
     return np.dot(x1, theta)
