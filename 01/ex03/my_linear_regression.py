@@ -62,7 +62,6 @@ class MyLinearRegression():
             y_hat = np.dot(x1, self.thetas)
             g1 = np.dot(x1.T, y_hat).reshape((2, 1)) / m
             new_theta = self.thetas - self.alpha * (g1 + g2)
-            print(new_theta)
             if np.array_equal(new_theta, self.thetas):
                 break
             self.thetas = new_theta

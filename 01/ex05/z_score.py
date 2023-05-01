@@ -24,6 +24,9 @@ def zscore(x: ndarray) -> ndarray | None:
     Raises:
         This function shouldn’t raise any Exception.
     """
+    xstd = x.std()
+    if xstd == 0:
+        return x - x.mean()
     return (x - x.mean()) / x.std()
 
 

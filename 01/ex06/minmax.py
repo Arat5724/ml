@@ -25,7 +25,9 @@ def minmax(x: ndarray) -> ndarray | None:
         This function shouldn't raise any Exception.
     """
     xmax, xmin = x.max(), x.min()
-    return (x - x.min())/(x.max() - x.min())
+    if xmax - xmin == 0:
+        return x - xmin
+    return (x - xmin)/(xmax - xmin)
 
 
 if __name__ == "__main__":
