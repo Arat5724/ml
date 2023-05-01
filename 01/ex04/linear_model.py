@@ -19,13 +19,14 @@ def plot1(x, y, y_hat):
 def plot2(x, y, model):
     ax = plt.figure(num=2).add_subplot(projection='3d')
     m, n = x.shape
-    x = np.hstack((np.ones((m, 1)), x))
+    x1 = np.hstack((np.ones((m, 1)), x))
 
     thetas = model.thetas
     theta0 = np.linspace(-1, 1, 50) + thetas[0]
     theta1 = np.linspace(-0.2, 0.2, 50) + thetas[1]
     theta0, theta1 = np.meshgrid(theta0, theta1)
-    cost = np.subtract(np.dot(np.dstack([theta0, theta1]), x.T), y.reshape(-1))
+    cost = np.subtract(
+        np.dot(np.dstack([theta0, theta1]), x1.T), y.reshape(-1))
     cost = (cost * cost).sum(axis=2) / 2 / m
     ax.contour3D(theta0, theta1, cost, 150, cmap='twilight')
     ax.set_xlabel("$\\theta_0$")
