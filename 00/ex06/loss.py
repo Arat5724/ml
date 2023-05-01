@@ -60,9 +60,7 @@ def loss_(y: ndarray, y_hat: ndarray) -> float | None:
     Raises:
         This function should not raise any Exception.
     """
-    m, _ = y.shape
-    loss = loss_elem_(y, y_hat)
-    return loss.sum() / 2 / m
+    return loss_elem_(y, y_hat).sum() / 2 / y.shape[0]
 
 
 if __name__ == "__main__":

@@ -1,5 +1,3 @@
-# from numpy import vectorize
-
 class Matrix:
 
     def __init__(self, obj):

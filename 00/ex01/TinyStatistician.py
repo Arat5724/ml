@@ -5,9 +5,10 @@ from numpy import ndarray
 def typechecker(fun):
     def wrapper(self, x):
         try:
-            if ((isinstance(x, list) and len(x) > 0) or
-                    (isinstance(x, ndarray) and x.size > 0)):
+            if (isinstance(x, list) and len(x) > 0):
                 return fun(self, x)
+            if (isinstance(x, ndarray) and x.size > 0):
+                return fun(self, x.reshape(-1))
         except Exception as e:
             print(e)
     return wrapper
@@ -16,10 +17,11 @@ def typechecker(fun):
 def typechecker2(fun):
     def wrapper(self, x, p):
         try:
-            if ((isinstance(x, list) and len(x) > 0) or
-                (isinstance(x, ndarray) and x.size > 0)
-                ) and isinstance(p, (int, float)) and 0 <= p <= 100:
-                return fun(self, x, p)
+            if isinstance(p, (int, float)) and 0 <= p <= 100:
+                if (isinstance(x, list) and len(x) > 0):
+                    return fun(self, x, p)
+                if (isinstance(x, ndarray) and x.size > 0):
+                    return fun(self, x.reshape(-1), p)
         except Exception as e:
             print(e)
     return wrapper
@@ -78,15 +80,15 @@ if __name__ == '__main__':
     a = [1, 42, 300, 10, 59]
     # a = [1]
     a_ndarray = np.array(a)
-    print(tstat.mean(a))
-    print(tstat.median(a))
-    print(tstat.quartile(a))
-    print(tstat.percentile(a, 10))
-    print(tstat.percentile(a, 15))
-    print(tstat.percentile(a, 20))
-    print(tstat.percentile(a, 100))
-    print(tstat.var(a))
-    print(tstat.std(a))
+    print(tstat.mean(a_ndarray))
+    print(tstat.median(a_ndarray))
+    print(tstat.quartile(a_ndarray))
+    print(tstat.percentile(a_ndarray, 10))
+    print(tstat.percentile(a_ndarray, 15))
+    print(tstat.percentile(a_ndarray, 20))
+    print(tstat.percentile(a_ndarray, 100))
+    print(tstat.var(a_ndarray))
+    print(tstat.std(a_ndarray))
     print()
     print(np.mean(a_ndarray))
     print(np.median(a_ndarray))
