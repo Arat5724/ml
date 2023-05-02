@@ -2,7 +2,29 @@ import numpy as np
 from numpy import ndarray
 
 
-def gradient(x: ndarray, y: ndarray, theta: ndarray) -> ndarray:
+def typechecker(fun):
+    def reshape_(*arg):
+        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
+
+    def wrapper(x, y, theta):
+        try:
+            if (isinstance(x, ndarray) and isinstance(y, ndarray) and
+                    isinstance(theta, ndarray)):
+                x, y, theta = reshape_(x, y, theta)
+                if (x.size and x.ndim == 2 and
+                        y.shape == (x.shape[0], 1) and theta.shape == (x.shape[1] + 1, 1)):
+                    return fun(x, y, theta)
+        except Exception as e:
+            print(e)
+    return wrapper
+
+
+def add_intercept(x: ndarray) -> ndarray | None:
+    return np.hstack((np.ones((x.shape[0], 1)), x))
+
+
+@typechecker
+def gradient(x: ndarray, y: ndarray, theta: ndarray) -> ndarray | None:
     """Computes a gradient vector from three non-empty numpy.array, without any for-loop.
         The three arrays must have the compatible dimensions.
     Args:
@@ -18,8 +40,26 @@ def gradient(x: ndarray, y: ndarray, theta: ndarray) -> ndarray:
     Raises:
         This function should not raise any Exception.
     """
+    x1 = add_intercept(x)
+    y_hat = np.dot(x1, theta)
+    return np.dot(x1.T, y_hat - y) / x.shape[0]
 
-    m, _ = x.shape
-    x = np.hstack((np.ones((m, 1)), x))
-    y_hat = np.dot(x, theta)
-    return np.dot(x.T, y_hat - y) / m
+
+if __name__ == "__main__":
+    x = np.array([
+        [-6, -7, -9],
+        [13, -2, 14],
+        [-7, 14, -1],
+        [-8, -4, 6],
+        [-5, -9, 6],
+        [1, -5, 11],
+        [9, -11, 8]])
+    y = np.array([2, 14, -13, 5, 12, 4, -19]).reshape((-1, 1))
+
+    theta1 = np.array([0, 3, 0.5, -6]).reshape((-1, 1))
+    # Example :
+    print(gradient(x, y, theta1))
+
+    # Example :
+    theta2 = np.array([0, 0, 0, 0]).reshape((-1, 1))
+    print(gradient(x, y, theta2))

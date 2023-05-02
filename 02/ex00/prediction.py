@@ -2,7 +2,24 @@ import numpy as np
 from numpy import ndarray
 
 
-def simple_predict(x: ndarray, theta: ndarray) -> ndarray:
+def typechecker(fun):
+    def reshape_(*arg):
+        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
+
+    def wrapper(x, theta):
+        try:
+            if isinstance(x, ndarray) and isinstance(theta, ndarray):
+                x, theta = reshape_(x, theta)
+                if (x.size and x.ndim == 2 and theta.size and theta.ndim == 2
+                        and theta.shape == (x.shape[1] + 1, 1)):
+                    return fun(x, theta)
+        except Exception as e:
+            print(e)
+    return wrapper
+
+
+@typechecker
+def simple_predict(x: ndarray, theta: ndarray) -> ndarray | None:
     """Computes the prediction vector y_hat from two non-empty numpy.array.
     Args:
         x: has to be an numpy.array, a matrix of dimension m * n.
@@ -15,5 +32,27 @@ def simple_predict(x: ndarray, theta: ndarray) -> ndarray:
     Raises:
         This function should not raise any Exception.
     """
-    m, _ = x.shape
-    return np.dot(np.hstack((np.ones((m, 1)), x)), theta)
+    y_hat = theta[0][0]
+    for i in range(x.shape[1]):
+        y_hat += x[..., i].reshape(-1, 1) * theta[i + 1]
+    return y_hat
+
+
+if __name__ == "__main__":
+    x = np.arange(1, 13).reshape((4, -1))
+
+    # Example 1:
+    theta1 = np.array([5, 0, 0, 0]).reshape((-1, 1))
+    print(simple_predict(x, theta1))
+
+    # Example 2:
+    theta2 = np.array([0, 1, 0, 0]).reshape((-1, 1))
+    print(simple_predict(x, theta2))
+
+    # Example 3:
+    theta3 = np.array([-1.5, 0.6, 2.3, 1.98]).reshape((-1, 1))
+    print(simple_predict(x, theta3))
+
+    # Example 4:
+    theta4 = np.array([-3, 1, 2, 3.5]).reshape((-1, 1))
+    print(simple_predict(x, theta4))
