@@ -67,9 +67,9 @@ class Matrix:
     def __truediv__(self, obj):
         return type(self)([[c / obj for c in r] for r in self.data])
 
+    @isscalar
     def __rtruediv__(self, obj):
-        raise NotImplementedError(
-            "Division of a scalar by a Matrix is not defined here.")
+        return type(self)([[obj / c for c in r] for r in self.data])
 
     def issvm(i, j):
         def wrapper1(fun):
@@ -86,7 +86,7 @@ class Matrix:
     @issvm(1, 0)
     def __mul__(self, obj):
         if isinstance(obj, (int, float, bool)):
-            return [[c * obj for c in r] for r in self.data]
+            return type(self)([[c * obj for c in r] for r in self.data])
         a, b = self.shape
         _, c = obj.shape
 
@@ -121,3 +121,15 @@ class Vector(Matrix):
         m, n = self.shape
         if not (m == 1 or n == 1):
             raise TypeError("data must be a row or column vector")
+
+    def dot(self, obj):
+        if not isinstance(obj, Vector):
+            raise TypeError("only vectors of same dimensions")
+        self = self if self.shape[0] == 1 else self.T()
+        obj = obj if obj.shape[0] == 1 else obj.T()
+        if self.shape[0] != obj.shape[0]:
+            raise TypeError("only vectors of same dimensions")
+        ret = 0.0
+        for i, j in zip(self.data[0], obj.data[0]):
+            ret += i * j
+        return ret
