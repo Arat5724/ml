@@ -2,6 +2,18 @@ import numpy as np
 from numpy import ndarray
 
 
+def typechecker(fun):
+    def wrapper(x, power):
+        try:
+            if isinstance(x, ndarray) and isinstance(power, int):
+                if (x.size and x.ndim == 2 and x.shape[1] == 1 and power > 0):
+                    return fun(x, power)
+        except Exception as e:
+            print(e)
+    return wrapper
+
+
+@typechecker
 def add_polynomial_features(x: ndarray, power: int):
     """Add polynomial features to vector x by raising its values up to the power given in argument.
     Args:
@@ -15,11 +27,17 @@ def add_polynomial_features(x: ndarray, power: int):
     Raises:
         This function should not raise any Exception.
     """
-    # power must greater than or equal to 0
     x = x.reshape(-1)
-    (m,) = x.shape
-    v = np.empty((power, m), dtype=x.dtype)
+    v = np.empty((power, x.shape[0]), dtype=x.dtype)
     v[0] = x
     for i in range(1, power):
         v[i] = v[i - 1] * x
     return v.T
+
+
+if __name__ == "__main__":
+    x = np.arange(1, 6).reshape(-1, 1)
+    # Example 0:
+    print(add_polynomial_features(x, 3))
+    # Example 1:
+    print(add_polynomial_features(x, 6))

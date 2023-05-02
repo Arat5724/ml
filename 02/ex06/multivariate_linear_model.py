@@ -3,6 +3,8 @@ import numpy as np
 from mylinearregression import MyLinearRegression as MyLR
 import matplotlib.pyplot as plt
 
+max_iter = 1000000
+
 
 def plot1(x, y, y_hat, xlabel, ax, i):
     c = [0, 0, 0]
@@ -17,14 +19,15 @@ def plot1(x, y, y_hat, xlabel, ax, i):
     ax.legend()
 
 
-def plot2(x, y, thetas, ax, i):
+def plot2(x, y, thetas, ax):
     m, n = x.shape
     x = np.hstack((np.ones((m, 1)), x))
-    theta0 = np.linspace(-1, 1, 50) + thetas[0]
+    theta0 = np.linspace(-15, 15, 50) + thetas[0]
     theta1 = np.linspace(-0.2, 0.2, 50) + thetas[1]
     theta0, theta1 = np.meshgrid(theta0, theta1)
-    cost = np.subtract(np.dot(np.dstack([theta0, theta1]), x.T), y.reshape(-1))
-    cost = (cost * cost).sum(axis=2) / 2 / m
+    y_hat = np.dot(np.dstack([theta0, theta1]), x.T)
+    y = np.broadcast_to(y.reshape(-1), y_hat.shape)
+    cost = ((y_hat - y)**2).sum(axis=2) / 2 / m
     ax.contour3D(theta0, theta1, cost, 150, cmap='twilight')
     ax.set_xlabel("$\\theta_0$")
     ax.set_ylabel("$\\theta_1$")
@@ -35,11 +38,11 @@ def uni(data):
     Y = np.array(data["Sell_price"]).reshape(-1, 1)
     fig = plt.figure(figsize=(12, 8))
     myLR_age = MyLR(thetas=np.array(
-        [[647], [-13]]), alpha=5e-5, max_iter=1000000)
+        [[647], [-13]]), alpha=5e-5, max_iter=max_iter)
     myLR_thrust = MyLR(thetas=np.array(
-        [[40], [4]]), alpha=5e-5, max_iter=1000000)
+        [[40], [4]]), alpha=5e-5, max_iter=max_iter)
     myLR_distance = MyLR(thetas=np.array(
-        [[745], [-3]]), alpha=5e-5, max_iter=1000000)
+        [[745], [-3]]), alpha=5e-5, max_iter=max_iter)
 
     mylist = [
         ("Age",          myLR_age,      "$x_1$: age (in years)"),
@@ -52,7 +55,7 @@ def uni(data):
         ax1 = fig.add_subplot(2, 3, 1 + i)
         ax2 = fig.add_subplot(2, 3, 4 + i, projection='3d')
         plot1(X, Y, Y_model1, xlabel, ax1, i)
-        plot2(X, Y, myLR.thetas, ax2, i)
+        plot2(X, Y, myLR.thetas, ax2)
         print('Feature:', feature)
         print('\tMean Squared Error:', myLR.loss_(Y, Y_model1) * 2)
 
@@ -62,7 +65,7 @@ def mul(data):
     Y = np.array(data[['Sell_price']])
     fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
     my_lreg = MyLR(thetas=np.array(
-        [[385.67], [-24.4], [5.6], [-2.7]]), alpha=1e-5, max_iter=1000000)
+        [[385.67], [-24.4], [5.6], [-2.7]]), alpha=1e-5, max_iter=max_iter)
     my_lreg.fit_(X, Y)
     mylist = [
         ("Age",          "$x_1$: age (in years)"),
