@@ -14,7 +14,7 @@ def typechecker(fun):
 
 
 @typechecker
-def add_polynomial_features(x: ndarray, power: int):
+def add_polynomial_features(x: ndarray, power: int) -> ndarray | None:
     """Add polynomial features to vector x by raising its values up to the power given in argument.
     Args:
         x: has to be an numpy.array, a vector of dimension m * 1.
