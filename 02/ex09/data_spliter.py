@@ -3,7 +3,24 @@ from numpy import ndarray
 from random import randint
 
 
-def data_spliter(x, y, proportion):
+def typechecker(fun):
+    def reshape_(*arg):
+        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
+
+    def wrapper(x, y, proportion):
+        try:
+            if (isinstance(x, ndarray) and isinstance(y, ndarray) and
+                    isinstance(proportion, (int, float))):
+                x, y = reshape_(x, y)
+                if (x.size and x.ndim == 2 and
+                        y.shape == (x.shape[0], 1) and 0 <= proportion <= 1):
+                    return fun(x, y, proportion)
+        except Exception as e:
+            print(e)
+    return wrapper
+
+
+def data_spliter(x: ndarray, y: ndarray, proportion: float):
     """Shuffles and splits the dataset (given by x and y) into a training and a test set,
         while respecting the given proportion of examples to be kept in the training set.
     Args:
@@ -19,11 +36,34 @@ def data_spliter(x, y, proportion):
     Raises:
         This function should not raise any Exception.
     """
-    m, _ = x.shape
+    m = x.shape[0]
     x, y = np.copy(x), np.copy(y)
     for i in range(m):
         j = randint(0, i)
         x[[i, j]] = x[[j, i]]
         y[[i, j]] = y[[j, i]]
-    m0 = int(m * proportion)
-    return x[:m0], x[m0:], y[:m0], y[m0:]
+    index = int(m * proportion)
+    return x[:index], x[index:], y[:index], y[index:]
+
+
+if __name__ == "__main__":
+
+    x1 = np.array([1, 42, 300, 10, 59]).reshape((-1, 1))
+    y = np.array([0, 1, 0, 1, 0]).reshape((-1, 1))
+    # Example 1:
+    print(data_spliter(x1, y, 0.8))
+
+    # Example 2:
+    print(data_spliter(x1, y, 0.5))
+
+    x2 = np.array([[1, 42],
+                   [300, 10],
+                   [59, 1],
+                   [300, 59],
+                   [10, 42]])
+    y = np.array([0, 1, 0, 1, 0]).reshape((-1, 1))
+    # Example 3:
+    print(data_spliter(x2, y, 0.8))
+
+    # Example 4:
+    print(data_spliter(x2, y, 0.5))
