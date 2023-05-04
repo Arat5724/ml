@@ -20,6 +20,7 @@ def typechecker(fun):
     return wrapper
 
 
+@typechecker
 def data_spliter(x: ndarray, y: ndarray, proportion: float):
     """Shuffles and splits the dataset (given by x and y) into a training and a test set,
         while respecting the given proportion of examples to be kept in the training set.
