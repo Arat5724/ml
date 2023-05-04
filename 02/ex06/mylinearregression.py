@@ -64,6 +64,7 @@ class MyLinearRegression():
     def _add_intercept(self, x: ndarray) -> ndarray:
         return np.hstack((np.ones((x.shape[0], 1)), x))
 
+    @_typechecker_construct
     def __init__(self, thetas: ndarray, alpha: float = 0.001, max_iter: int = 1000):
         self.alpha = alpha
         self.max_iter = max_iter
