@@ -1,66 +1,62 @@
 import numpy as np
 from numpy import ndarray
 import pandas as pd
-from random import randint
+from pandas import Series
 from mylinearregression import MyLinearRegression as MyLR
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression as LR
-from sklearn.metrics import mean_squared_error
 import pickle
 
 
 def add_polynomial_features(x: ndarray, power: int):
-    # power must greater than or equal to 0
     x = x.reshape(-1)
-    (m,) = x.shape
-    v = np.empty((power, m), dtype=x.dtype)
+    v = np.empty((power, x.shape[0]), dtype=x.dtype)
     v[0] = x
     for i in range(1, power):
         v[i] = v[i - 1] * x
-    return np.transpose(v)
+    return v.T
 
 
 def minmax(x: ndarray) -> ndarray:
-    return (x - x.min())/(x.max() - x.min())
+    xmin, xmax = x.min(), x.max()
+    return (x - xmin)/(xmax - xmin)
+
+
+def scaler(x: Series, n: int) -> ndarray:
+    return add_polynomial_features(minmax(x.to_numpy()), n)
 
 
 if __name__ == "__main__":
     with open("models.pickle", "rb") as f:
         mydict = pickle.load(f)
-    print(mydict)
-    minkey, minmse, mintheta = None, None, None
-    for key, value in mydict.items():
-        mse = value['mse']
-        theta = value['theta']
-        if minmse == None or mse < minmse:
-            minkey, minmse, mintheta = key, mse, theta
-    print(minkey, minmse, mintheta)
-    i, j, k = minkey // 100, minkey % 100 // 10, minkey % 10
+    mydict = sorted(
+        mydict.items(), key=lambda item: item[1]['mse'], reverse=True)
 
-    print((i, j, k))
+    # Plot the evaluation curve which help you to select the best model #
+    models_abc = [str(v[0]) for v in mydict]
+    models_mse = [v[1]['mse'] for v in mydict]
+    ax1 = plt.figure(figsize=(15, 5)).add_subplot()
+    ax1.plot(models_abc, models_mse)
+    plt.xticks(rotation=90)
+
+    # select the best model #
+    best_model = mydict[-1]
+    minkey, minmse, mintheta = best_model[0], best_model[1]['mse'], best_model[1]['theta']
+    mylr = MyLR(mintheta)
+
+    # read a data #
     data = pd.read_csv("space_avocado.csv")
     mylist = ["weight", "prod_distance", "time_delivery"]
-    # 242
-    for feature in mylist:
-        data[feature] = minmax(data[feature])
-    X = np.array(data[mylist])
-    Y = np.array(data["target"]).reshape(-1, 1)
-    x0 = add_polynomial_features(X[..., 0], 4)
-    x1 = add_polynomial_features(X[..., 1], 4)
-    x2 = add_polynomial_features(X[..., 2], 4)
-    xijk = np.hstack((x0[..., :i], x1[..., :j], x2[..., :k]))
+    X = np.hstack(tuple(scaler(data[feature], int(n))
+                        for feature, n in zip(mylist, str(minkey))))
+    Y = data["target"].to_numpy()
+    Y_model = mylr.predict_(X)
 
-    mylr = MyLR(mintheta)
-    print(mylr.gradient(xijk, Y).tolist())
-    Y_model = mylr.predict_(xijk)
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
-    # print(Y_model)
-    for i, (feature, ax) in enumerate(zip(mylist, axes)):
-        xi = X[..., i]
-        ax.scatter(xi, Y_model, s=10, color=(0, 1, 0),
-                   edgecolor='none', label="predicted")
-        ax.scatter(xi, Y, s=5, color=(1, 0, 0),
-                   edgecolor='none', label="real")
+    # Plot the true price and the predicted price obtain via your best model #
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    for feature, ax in zip(mylist, axes):
+        Xi = data[feature].to_numpy()
+        ax.scatter(Xi, Y_model, s=1, color=(0, 0, 1), label="predicted")
+        ax.scatter(Xi, Y, s=1, color=(1, 0, 0), label="real")
         ax.set_xlabel(feature)
         ax.set_ylabel("target")
         ax.legend()
