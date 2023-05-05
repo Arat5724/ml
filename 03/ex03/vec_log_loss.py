@@ -11,7 +11,8 @@ def typechecker(fun):
             if (isinstance(y, ndarray) and isinstance(y_hat, ndarray) and
                     isinstance(eps, float)):
                 y, y_hat = reshape_(y, y_hat)
-                if (y.size and y.ndim == 2 and y.shape == y_hat.shape):
+                if (y.size and y.ndim == 2 and y.shape[1] == 1 and
+                        y.shape == y_hat.shape):
                     return fun(y, y_hat, eps)
         except Exception as e:
             print(e)
