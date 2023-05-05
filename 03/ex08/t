@@ -1,6 +1,0 @@
-y_hat = np.array(['norminet', 'dog', 'norminet', 'norminet', 'dog', 'dog', 'dog', 'dog'])
-y = np.array(['dog', 'dog', 'norminet', 'norminet', 'dog', 'norminet', 'dog', 'norminet'])
-
-precision_score_(y, y_hat, pos_label='norminet')
-recall_score_(y, y_hat, pos_label='norminet')
-f1_score_(y, y_hat, pos_label='norminet')
