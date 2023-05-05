@@ -100,7 +100,7 @@ if __name__ == "__main__":
     mylr.fit_(trainingX, trainingY)
     testPrediction = (mylr.predict_(testX) >= 0.5) * 1
     prediction = (mylr.predict_(X) >= 0.5) * 1
-    correct = ((testPrediction == testY) * 1).sum()
+    correct = (testPrediction == testY).sum()
     print("the fraction of correct predictions :",
           f"{correct} / {testPrediction.size}")
 

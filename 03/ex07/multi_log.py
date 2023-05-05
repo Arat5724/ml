@@ -80,7 +80,7 @@ if __name__ == "__main__":
     testPrediction = testProbabilities.argmax(axis=1)
 
     # 4
-    correct = ((testPrediction == testOrigin) * 1).sum()
+    correct = (testPrediction == testOrigin).sum()
     print("the fraction of correct predictions :",
           f"{correct} / {testOrigin.size}")
 
