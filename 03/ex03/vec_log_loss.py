@@ -28,7 +28,7 @@ def logistic_predict_(x: ndarray, theta: ndarray) -> ndarray | None:
 
 
 @typechecker
-def vec_log_loss_(y: ndarray, y_hat: ndarray, eps: float = 1e-15) -> float:
+def vec_log_loss_(y: ndarray, y_hat: ndarray, eps: float = 1e-15) -> float | None:
     """
     Compute the logistic loss value.
     Args:
