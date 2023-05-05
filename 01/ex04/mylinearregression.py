@@ -57,10 +57,10 @@ class MyLinearRegression():
     def fit_(self, x: ndarray, y: ndarray) -> ndarray | None:
         x1 = self._add_intercept(x)
         m = y.shape[0]
-        g2 = np.dot(x1.T, -y).reshape((2, 1)) / m
+        g2 = np.dot(x1.T, -y) / m
         for _ in range(self.max_iter):
             y_hat = np.dot(x1, self.thetas)
-            g1 = np.dot(x1.T, y_hat).reshape((2, 1)) / m
+            g1 = np.dot(x1.T, y_hat) / m
             new_theta = self.thetas - self.alpha * (g1 + g2)
             if np.array_equal(new_theta, self.thetas):
                 break
