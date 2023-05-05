@@ -8,49 +8,96 @@ class MyLogisticRegression():
     My personnal linear regression class to fit like a boss.
     """
 
-    def __init__(self, thetas: ndarray, alpha: float = 0.001, max_iter: int = 1000):
-        self.alpha = alpha
-        self.max_iter = max_iter
-        self.thetas = thetas
-        if self.thetas.ndim == 1:
-            self.thetas = self.thetas.reshape((*self.thetas.shape, 1))
+    def _typechecker_construct(fun):
+        def wrapper(self, theta, alpha=0.001, max_iter=1000):
+            if (isinstance(theta, ndarray) and theta.size and
+                    isinstance(alpha, float) and isinstance(max_iter, int)):
+                theta = theta.reshape(
+                    (-1, 1)) if theta.ndim == 1 else theta
+                if theta.ndim == 2 and theta.shape[1] == 1:
+                    return fun(self, theta, alpha, max_iter)
+            else:
+                raise TypeError("Invalid type")
+        return wrapper
 
-    def __sigmoid(x):
+    def _typechecker_fit(fun):
+        def reshape_(*arg):
+            return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
+
+        def wrapper(self, x, y):
+            try:
+                if (isinstance(x, ndarray) and isinstance(y, ndarray)):
+                    x, y = reshape_(x, y)
+                if (x.size and x.ndim == 2 and
+                        x.shape[1] == self.theta.shape[0] - 1 and y.shape == (x.shape[0], 1)):
+                    return fun(self, x, y)
+            except Exception as e:
+                print(e)
+        return wrapper
+
+    def _typechecker_predict(fun):
+        def wrapper(self, x):
+            try:
+                if isinstance(x, ndarray):
+                    x, x.reshape((-1, 1)) if x.ndim == 1 else x
+                    if (x.size and x.ndim == 2 and
+                            x.shape[1] == self.theta.shape[0] - 1):
+                        return fun(self, x)
+            except Exception as e:
+                print(e)
+        return wrapper
+
+    def _typechecker_same(fun):
+        def reshape_(*arg):
+            return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
+
+        def wrapper(self, y, y_hat):
+            try:
+                if isinstance(y, ndarray) and isinstance(y_hat, ndarray):
+                    y, y_hat = reshape_(y, y_hat)
+                    if (y.size and y.ndim == 2 and
+                            y.shape[1] == 1 and y.shape == y_hat.shape):
+                        return fun(self, y, y_hat)
+            except Exception as e:
+                print(e)
+        return wrapper
+
+    def _add_intercept(self, x: ndarray) -> ndarray:
+        return np.hstack((np.ones((x.shape[0], 1)), x))
+
+    def _sigmoid(self, x: ndarray) -> ndarray:
         return 1 / (1 + np.exp(-x))
 
-    def __add_intercept(self, x: ndarray) -> ndarray:
-        if x.ndim == 1:
-            x = x.reshape((*x.shape, 1))
-        m, n = x.shape
-        if m * n == 0:
-            return None
-        return np.hstack((np.ones((m, 1)), x))
+    @_typechecker_construct
+    def __init__(self, theta: ndarray, alpha: float = 0.001, max_iter: int = 1000):
+        self.alpha = alpha
+        self.max_iter = max_iter
+        self.theta = theta
 
-    def fit_(self, x: ndarray, y: ndarray) -> ndarray:
-        x = self.__add_intercept(x)
-        if y.ndim == 1:
-            y = y.reshape((*y.shape, 1))
-        m, _ = y.shape
-        g2 = np.dot(x.T, -y).reshape((-1, 1)) / m
+    @_typechecker_fit
+    def fit_(self, x: ndarray, y: ndarray) -> ndarray | None:
+        x1 = self._add_intercept(x)
+        m = y.shape[0]
+        g2 = np.dot(x1.T, -y) / m
         for _ in range(self.max_iter):
-            y_hat = MyLogisticRegression.__sigmoid(np.dot(x, self.thetas))
-            g1 = np.dot(x.T, y_hat).reshape((-1, 1)) / m
-            new_theta = self.thetas - self.alpha * (g1 + g2)
-            if np.array_equal(new_theta, self.thetas):
+            y_hat = self._sigmoid(np.dot(x1, self.theta))
+            g1 = np.dot(x1.T, y_hat) / m
+            new_theta = self.theta - self.alpha * (g1 + g2)
+            if np.array_equal(new_theta, self.theta):
                 break
-            self.thetas = new_theta
+            self.theta = new_theta
 
-    def predict_(self, x: ndarray) -> ndarray:
-        m, n = x.shape
-        x1 = np.hstack((np.ones((m, 1)), x))
-        return MyLogisticRegression.__sigmoid(np.dot(x1, self.thetas))
+    @_typechecker_predict
+    def predict_(self, x: ndarray) -> ndarray | None:
+        x1 = self._add_intercept(x)
+        return self._sigmoid(np.dot(x1, self.theta))
 
-    def loss_elem_(self, y: ndarray, y_hat: ndarray) -> ndarray:
-        m, n = y.shape
+    @_typechecker_same
+    def loss_elem_(self, y: ndarray, y_hat: ndarray) -> ndarray | None:
         eps = 1e-15
         return y * np.log(y_hat + eps) + (1 - y) * np.log(1 - y_hat + eps)
 
-    def loss_(self, y: ndarray, y_hat: ndarray) -> float:
-        m, n = y.shape
+    @_typechecker_same
+    def loss_(self, y: ndarray, y_hat: ndarray) -> float | None:
         y, y_hat, eps = y.reshape(-1), y_hat.reshape(-1), 1e-15
-        return (np.dot(y, np.log(y_hat + eps)) + np.dot(1 - y, np.log(1 - y_hat + eps))) / -m
+        return (np.dot(y, np.log(y_hat + eps)) + np.dot(1 - y, np.log(1 - y_hat + eps))) / -y.shape[0]
