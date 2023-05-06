@@ -37,8 +37,7 @@ if __name__ == "__main__":
         data[feature] = minmax(data[feature])
     X = np.array(data[mylist])
     Y = np.array(data["target"]).reshape(-1, 1)
-    # X, testX, Y, testY = X[:2450], X[2450:], Y[:2450], Y[2450:]
-    X, testX, Y, testY = data_spliter(X, Y, 0.5)
+    X, testX, Y, testY = X[:2450], X[2450:], Y[:2450], Y[2450:]
     try:
         with open("models.pickle", "rb") as f:
             mydict = pickle.load(f)
