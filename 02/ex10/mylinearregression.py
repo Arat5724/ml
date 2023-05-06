@@ -12,7 +12,8 @@ class MyLinearRegression():
         def wrapper(self, thetas, alpha=0.001, max_iter=1000):
             if (isinstance(thetas, ndarray) and thetas.size and
                     isinstance(alpha, float) and isinstance(max_iter, int)):
-                thetas.reshape((-1, 1)) if thetas.ndim == 1 else thetas
+                thetas = thetas.reshape(
+                    (-1, 1)) if thetas.ndim == 1 else thetas
                 if thetas.ndim == 2 and thetas.shape[1] == 1:
                     return fun(self, thetas, alpha, max_iter)
             else:
