@@ -2,7 +2,30 @@ import numpy as np
 from numpy import ndarray
 
 
-def reg_loss_(y, y_hat, theta, lambda_):
+def typechecker(fun):
+    def reshape_(*arg):
+        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
+
+    def wrapper(y, y_hat, theta, lambda_):
+        try:
+            if (isinstance(y, ndarray) and isinstance(y_hat, ndarray) and
+                    isinstance(theta, ndarray) and isinstance(lambda_, (float | int))):
+                y, y_hat, theta = reshape_(y, y_hat, theta)
+                if (y.size and theta.size and y.ndim == theta.ndim == 2 and
+                        y.shape[1] == theta.shape[1] == 1 and y.shape == y_hat.shape):
+                    return fun(y, y_hat, theta, lambda_)
+        except Exception as e:
+            print(e)
+    return wrapper
+
+
+def l2(theta: ndarray) -> float:
+    theta1 = theta[1:].reshape(-1)
+    return np.dot(theta1, theta1)
+
+
+@typechecker
+def reg_loss_(y: ndarray, y_hat: ndarray, theta: ndarray, lambda_: float) -> float | None:
     """Computes the regularized loss of a linear regression model from two non-empty numpy.array, without any for loop.
     Args:
         y: has to be an numpy.ndarray, a vector of shape m * 1.
@@ -16,7 +39,20 @@ def reg_loss_(y, y_hat, theta, lambda_):
     Raises:
         This function should not raise any Exception.
     """
-    (m, _) = y.shape
-    res, theta = (y_hat - y).reshape(-1), theta.reshape(-1)
-    theta[0] = 0.0
-    return (np.dot(res, res) + lambda_ * np.dot(theta, theta)) / 2 / m
+    ysub = (y_hat - y).reshape(-1)
+    return (np.dot(ysub, ysub) + lambda_ * l2(theta)) / 2 / y.shape[0]
+
+
+if __name__ == "__main__":
+    y = np.array([2, 14, -13, 5, 12, 4, -19]).reshape((-1, 1))
+    y_hat = np.array([3, 13, -11.5, 5, 11, 5, -20]).reshape((-1, 1))
+    theta = np.array([1, 2.5, 1.5, -0.9]).reshape((-1, 1))
+
+    # Example :
+    print(reg_loss_(y, y_hat, theta, .5))
+
+    # Example :
+    print(reg_loss_(y, y_hat, theta, .05))
+
+    # Example :
+    print(reg_loss_(y, y_hat, theta, .9))
