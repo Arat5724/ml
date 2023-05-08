@@ -4,24 +4,30 @@ from random import randint
 
 
 def typechecker(fun):
-    def reshape_(*arg):
-        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
-
-    def wrapper(x, y, proportion):
+    def wrapper(*args, **kwargs):
+        from inspect import signature
+        bound_args = signature(fun).bind(*args, **kwargs).arguments
+        for param, value in bound_args.items():
+            if param in fun.__annotations__ and not isinstance(value, fun.__annotations__[param]):
+                return None
+            if isinstance(value, ndarray) and (value.size == 0 or value.ndim != 2):
+                return None
+        theta, x, y, y_hat = [bound_args[ele] if ele in bound_args else None
+                              for ele in ['theta', 'x', 'y', 'y_hat']]
+        if ((theta is not None and ((x is not None and theta.shape[0] != x.shape[1] + 1) or theta.shape[1] != 1)) or
+            (y is not None and ((x is not None and y.shape[0] != x.shape[0]) or y.shape[1] != 1)) or
+            (y_hat is not None and ((y is not None and y_hat.shape != y.shape) or
+                                    (y is None and ((x is not None and y_hat.shape[0] != x.shape[0]) or y_hat.shape[1] != 1))))):
+            return None
         try:
-            if (isinstance(x, ndarray) and isinstance(y, ndarray) and
-                    isinstance(proportion, (int, float))):
-                x, y = reshape_(x, y)
-                if (x.size and x.ndim == 2 and
-                        y.shape == (x.shape[0], 1) and 0 <= proportion <= 1):
-                    return fun(x, y, proportion)
-        except Exception as e:
-            print(e)
+            return fun(*args, **kwargs)
+        except:
+            return None
     return wrapper
 
 
 @typechecker
-def data_spliter(x: ndarray, y: ndarray, proportion: float):
+def data_spliter(x: ndarray, y: ndarray, proportion: float | int):
     """Shuffles and splits the dataset (given by x and y) into a training and a test set,
         while respecting the given proportion of examples to be kept in the training set.
     Args:
@@ -37,6 +43,8 @@ def data_spliter(x: ndarray, y: ndarray, proportion: float):
     Raises:
         This function should not raise any Exception.
     """
+    if not (0 <= proportion <= 1):
+        return None
     m = x.shape[0]
     x, y = np.copy(x), np.copy(y)
     for i in range(m):
