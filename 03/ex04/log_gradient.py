@@ -3,19 +3,25 @@ from numpy import ndarray
 
 
 def typechecker(fun):
-    def reshape_(*arg):
-        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
-
-    def wrapper(x, y, theta):
+    def wrapper(*args, **kwargs):
+        from inspect import signature
+        bound_args = signature(fun).bind(*args, **kwargs).arguments
+        for param, value in bound_args.items():
+            if param in fun.__annotations__ and not isinstance(value, fun.__annotations__[param]):
+                return None
+            if isinstance(value, ndarray) and (value.size == 0 or value.ndim != 2):
+                return None
+        theta, x, y, y_hat = [bound_args[ele] if ele in bound_args else None
+                              for ele in ['theta', 'x', 'y', 'y_hat']]
+        if ((theta is not None and ((x is not None and theta.shape[0] != x.shape[1] + 1) or theta.shape[1] != 1)) or
+            (y is not None and ((x is not None and y.shape[0] != x.shape[0]) or y.shape[1] != 1)) or
+            (y_hat is not None and ((y is not None and y_hat.shape != y.shape) or
+                                    (y is None and ((x is not None and y_hat.shape[0] != x.shape[0]) or y_hat.shape[1] != 1))))):
+            return None
         try:
-            if (isinstance(x, ndarray) and isinstance(y, ndarray) and
-                    isinstance(theta, ndarray)):
-                x, y, theta = reshape_(x, y, theta)
-                if (x.size and x.ndim == 2 and
-                        y.shape == (x.shape[0], 1) and theta.shape == (x.shape[1] + 1, 1)):
-                    return fun(x, y, theta)
-        except Exception as e:
-            print(e)
+            return fun(*args, **kwargs)
+        except:
+            return None
     return wrapper
 
 
@@ -29,7 +35,9 @@ def sigmoid_(x: ndarray) -> ndarray | None:
 
 @typechecker
 def log_gradient(x: ndarray, y: ndarray, theta: ndarray) -> ndarray | None:
-    """Computes a gradient vector from three non-empty numpy.ndarray, with a for-loop. The three arrays must have compatiblArgs:
+    """Computes a gradient vector from three non-empty numpy.ndarray,
+    with a for-loop. The three arrays must have compatible shapes.
+    Args:
         x: has to be an numpy.ndarray, a matrix of shape m * n.
         y: has to be an numpy.ndarray, a vector of shape m * 1.
         theta: has to be an numpy.ndarray, a vector of shape (n + 1) * 1.

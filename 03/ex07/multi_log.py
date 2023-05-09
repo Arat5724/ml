@@ -18,7 +18,7 @@ def data_spliter(x: ndarray, y: ndarray, proportion: float):
 
 
 def probability(trainingX, trainingOrigin, X, testX, zipcode):
-    mylr = MyLR(np.array([[0.0], [0.0], [0.0], [0.0]]), max_iter=1000000)
+    mylr = MyLR(np.array([[0.0], [0.0], [0.0], [0.0]]), max_iter=2000000)
     trainingY = (trainingOrigin == zipcode)
     mylr.fit_(trainingX, trainingY * 1)
     return mylr.predict_(X), mylr.predict_(testX)
@@ -44,7 +44,7 @@ def plot2d(X, Origin, prediction, mylist):
 
 def plot3d(X, Origin, prediction):
     fig, ax = plt.subplots(subplot_kw={'projection': '3d'})
-
+    Origin, prediction = Origin.reshape(-1), prediction.reshape(-1)
     areas = ["Venus", "Earth", "Mars", "Belt"]
     citizens = [X[(prediction == zipcode) & (Origin == zipcode)]
                 for zipcode in range(4)]
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     mylist = ["weight", "height", "bone_density"]
     X = np.array(pd.read_csv("solar_system_census.csv")[mylist])
     Origin = np.array(pd.read_csv("solar_system_census_planets.csv")
-                      ["Origin"])
+                      ["Origin"]).reshape(-1, 1)
     trainingX, testX, trainingOrigin, testOrigin = \
         data_spliter(X, Origin, 0.5)
     # 2
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                      for zipcode in range(4)]
     # 3
     testProbabilities = np.hstack([elem[1] for elem in probabilities])
-    testPrediction = testProbabilities.argmax(axis=1)
+    testPrediction = testProbabilities.argmax(axis=1).reshape(-1, 1)
 
     # 4
     correct = (testPrediction == testOrigin).sum()
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     # 5
     probabilities = np.hstack([elem[0] for elem in probabilities])
-    prediction = probabilities.argmax(axis=1)
+    prediction = probabilities.argmax(axis=1).reshape(-1, 1)
 
     plot2d(X, Origin, prediction, mylist)
     plot3d(X, Origin, prediction)

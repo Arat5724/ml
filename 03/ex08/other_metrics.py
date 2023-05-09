@@ -2,29 +2,23 @@ import numpy as np
 from numpy import ndarray
 
 
-def typechecker1(fun):
-    def wrapper(y, y_hat):
+def typechecker(fun):
+    def wrapper(*args, **kwargs):
+        from inspect import signature
+        bound_args = signature(fun).bind(*args, **kwargs).arguments
+        for param, value in bound_args.items():
+            if param in fun.__annotations__ and not isinstance(value, fun.__annotations__[param]):
+                return None
+        if bound_args['y'].shape != bound_args['y_hat'].shape:
+            return None
         try:
-            if (isinstance(y, ndarray) and isinstance(y_hat, ndarray) and
-                    y.shape == y_hat.shape):
-                return fun(y, y_hat)
-        except Exception as e:
-            print(e)
+            return fun(*args, **kwargs)
+        except:
+            return None
     return wrapper
 
 
-def typechecker2(fun):
-    def wrapper(y, y_hat, pos_label=1):
-        try:
-            if (isinstance(y, ndarray) and isinstance(y_hat, ndarray) and
-                    y.shape == y_hat.shape and isinstance(pos_label, (str, int))):
-                return fun(y, y_hat, pos_label)
-        except Exception as e:
-            print(e)
-    return wrapper
-
-
-@typechecker1
+@typechecker
 def accuracy_score_(y: ndarray, y_hat: ndarray) -> float | None:
     """
     Compute the accuracy score.
@@ -40,7 +34,7 @@ def accuracy_score_(y: ndarray, y_hat: ndarray) -> float | None:
     return (y == y_hat).sum() / y.size
 
 
-@typechecker2
+@typechecker
 def precision_score_(y: ndarray, y_hat: ndarray, pos_label: str | int = 1) -> float | None:
     """
     Compute the precision score.
@@ -58,7 +52,7 @@ def precision_score_(y: ndarray, y_hat: ndarray, pos_label: str | int = 1) -> fl
     return (y == pos_label).sum() / y.size
 
 
-@typechecker2
+@typechecker
 def recall_score_(y: ndarray, y_hat: ndarray, pos_label: str | int = 1) -> float | None:
     """
     Compute the recall score.
@@ -76,7 +70,7 @@ def recall_score_(y: ndarray, y_hat: ndarray, pos_label: str | int = 1) -> float
     return (y_hat == pos_label).sum() / y_hat.size
 
 
-@typechecker2
+@typechecker
 def f1_score_(y: ndarray, y_hat: ndarray, pos_label: str | int = 1) -> float | None:
     """
     Compute the f1 score.

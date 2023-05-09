@@ -3,19 +3,25 @@ from numpy import ndarray
 
 
 def typechecker(fun):
-    def reshape_(*arg):
-        return tuple(x.reshape((-1, 1)) if x.ndim == 1 else x for x in arg)
-
-    def wrapper(y, y_hat, eps=1e-15):
+    def wrapper(*args, **kwargs):
+        from inspect import signature
+        bound_args = signature(fun).bind(*args, **kwargs).arguments
+        for param, value in bound_args.items():
+            if param in fun.__annotations__ and not isinstance(value, fun.__annotations__[param]):
+                return None
+            if isinstance(value, ndarray) and (value.size == 0 or value.ndim != 2):
+                return None
+        theta, x, y, y_hat = [bound_args[ele] if ele in bound_args else None
+                              for ele in ['theta', 'x', 'y', 'y_hat']]
+        if ((theta is not None and ((x is not None and theta.shape[0] != x.shape[1] + 1) or theta.shape[1] != 1)) or
+            (y is not None and ((x is not None and y.shape[0] != x.shape[0]) or y.shape[1] != 1)) or
+            (y_hat is not None and ((y is not None and y_hat.shape != y.shape) or
+                                    (y is None and ((x is not None and y_hat.shape[0] != x.shape[0]) or y_hat.shape[1] != 1))))):
+            return None
         try:
-            if (isinstance(y, ndarray) and isinstance(y_hat, ndarray) and
-                    isinstance(eps, float)):
-                y, y_hat = reshape_(y, y_hat)
-                if (y.size and y.ndim == 2 and y.shape[1] == 1 and
-                        y.shape == y_hat.shape):
-                    return fun(y, y_hat, eps)
-        except Exception as e:
-            print(e)
+            return fun(*args, **kwargs)
+        except:
+            return None
     return wrapper
 
 
@@ -23,13 +29,17 @@ def sigmoid_(x: ndarray) -> ndarray | None:
     return 1 / (1 + np.exp(-x))
 
 
+def add_intercept(x: ndarray) -> ndarray:
+    return np.hstack((np.ones((x.shape[0], 1)), x))
+
+
 def logistic_predict_(x: ndarray, theta: ndarray) -> ndarray | None:
-    x1 = np.hstack((np.ones((x.shape[0], 1)), x))
+    x1 = add_intercept(x)
     return sigmoid_(np.dot(x1, theta))
 
 
 @typechecker
-def vec_log_loss_(y: ndarray, y_hat: ndarray, eps: float = 1e-15) -> float | None:
+def vec_log_loss_(y: ndarray, y_hat: ndarray, eps: float | int = 1e-15) -> float | None:
     """
     Compute the logistic loss value.
     Args:
@@ -61,7 +71,6 @@ if __name__ == "__main__":
     theta2 = np.array([[2], [0.5]])
     y_hat2 = logistic_predict_(x2, theta2)
     print(vec_log_loss_(y2, y_hat2))
-    # Output:
 
     # Example 3:
     y3 = np.array([[0], [1], [1]])

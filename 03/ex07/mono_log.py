@@ -14,15 +14,11 @@ example
     python3 mono_log.py -zipcode=2
     """
     argv = sys.argv
-    if len(argv) != 2:
-        print(usage)
-        exit()
-    if argv[1].startswith("-zipcode"):
-        argv[1] = argv[1][8:]
-    if not argv[1].isdigit() or not (0 <= (zipcode := int(argv[1])) <= 3):
-        print(usage)
-        exit()
-    return zipcode
+    if len(argv) == 2 and argv[1].startswith("-zipcode=") and \
+            (tmp := argv[1][9:]).isdigit() and (0 <= (zipcode := int(tmp)) <= 3):
+        return zipcode
+    print(usage)
+    exit()
 
 
 def data_spliter(x: ndarray, y: ndarray, proportion: float):
@@ -96,7 +92,7 @@ if __name__ == "__main__":
     trainingX, testX, trainingY, testY = \
         data_spliter(X, Y, 0.5)
 
-    mylr = MyLR(np.array([[0.0], [0.0], [0.0], [0.0]]), max_iter=100000)
+    mylr = MyLR(np.array([[0.0], [0.0], [0.0], [0.0]]), max_iter=1000000)
     mylr.fit_(trainingX, trainingY)
     testPrediction = (mylr.predict_(testX) >= 0.5) * 1
     prediction = (mylr.predict_(X) >= 0.5) * 1
