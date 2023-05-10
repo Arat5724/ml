@@ -11,27 +11,26 @@ class MyLogisticRegression():
 
     def _typechecker(fun):
         def wrapper(*args, **kwargs):
+            from inspect import signature
             bound_args = signature(fun).bind(*args, **kwargs).arguments
             for param, value in bound_args.items():
                 if param in fun.__annotations__ and not isinstance(value, fun.__annotations__[param]):
                     return None
                 if isinstance(value, ndarray) and (value.size == 0 or value.ndim != 2):
                     return None
-            theta: ndarray = getattr(bound_args['self'], 'theta', None)
-            x: ndarray = bound_args['x'] if 'x' in bound_args else None
-            y: ndarray = bound_args['y'] if 'y' in bound_args else None
-            y_hat: ndarray = bound_args['y_hat'] if 'y_hat' in bound_args else None
-            if x is not None and x.shape[1] + 1 != theta.shape[0]:
+            theta = (bound_args['theta'] if 'theta' in bound_args else
+                     getattr(bound_args['self'], 'theta', None))
+            x, y, y_hat = [bound_args[ele] if ele in bound_args else None
+                           for ele in ['x', 'y', 'y_hat']]
+            if ((theta is not None and ((x is not None and theta.shape[0] != x.shape[1] + 1) or theta.shape[1] != 1)) or
+                (y is not None and ((x is not None and y.shape[0] != x.shape[0]) or y.shape[1] != 1)) or
+                (y_hat is not None and ((y is not None and y_hat.shape != y.shape) or
+                                        (y is None and ((x is not None and y_hat.shape[0] != x.shape[0]) or y_hat.shape[1] != 1))))):
                 return None
-            if y is not None and ((x is not None and y.shape[0] != x.shape[0]) or y.shape[1] != 1):
+            try:
+                return fun(*args, **kwargs)
+            except:
                 return None
-            if y_hat is not None:
-                if y is not None:
-                    if y_hat.shape != y.shape:
-                        return None
-                elif (x is not None and y_hat.shape[0] != x.shape[0]) or y_hat.shape[1] != 1:
-                    return None
-            return fun(*args, **kwargs)
         return wrapper
 
     def _add_intercept(self, x: ndarray) -> ndarray:
@@ -63,6 +62,13 @@ class MyLogisticRegression():
         self.lambda_ = lambda_ if penalty in self.supported_penalties else 0
 
     @_typechecker
+    def gradient_(self, x: ndarray, y: ndarray) -> ndarray | None:
+        m = y.shape[0]
+        x1 = self._add_intercept(x)
+        y_hat = self._sigmoid(np.dot(x1, self.theta))
+        return (np.dot(x1.T, y_hat - y) + self.lambda_ * self.theta1) / m
+
+    @_typechecker
     def fit_(self, x: ndarray, y: ndarray) -> ndarray | None:
         x1 = self._add_intercept(x)
         m = y.shape[0]
@@ -90,28 +96,3 @@ class MyLogisticRegression():
         y, y_hat, eps = y.reshape(-1), y_hat.reshape(-1), 1e-15
         return (-(y.dot(np.log(y_hat + eps)) + (1 - y).dot(np.log(1 - y_hat + eps))) +
                 + self.lambda_ * self.l2 / 2) / y.shape[0]
-
-
-if __name__ == "__main__":
-    MyLR = MyLogisticRegression
-    X = np.array([[1., 1., 2., 3.], [5., 8., 13., 21.], [3., 5., 9., 14.]])
-    Y = np.array([[1], [0], [1]])
-    theta = np.array([[2], [0.5], [7.1], [-4.3], [2.09]])
-    mylr = MyLR(theta, lambda_=0)
-    # Example 0:
-    y_hat = mylr.predict_(X)
-    print(y_hat)
-
-    # Example 1:
-    print(mylr.loss_(Y, y_hat))
-
-    # Example 2:
-    mylr.fit_(X, Y)
-    print(mylr.theta)
-
-    # Example 3:
-    y_hat = mylr.predict_(X)
-    print(y_hat)
-
-    # Example 4:
-    print(mylr.loss_(Y, y_hat))
